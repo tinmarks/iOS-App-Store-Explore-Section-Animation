@@ -12,8 +12,8 @@ class ViewController: UIViewController, UITableViewDelegate,UITableViewDataSourc
 
     @IBOutlet weak var tableview: UITableView!
     var selectedCellIndexPath:NSIndexPath?
-    var visibleCells:NSMutableArray = NSMutableArray.new()
-    var detailVC:DetailViewController?
+    var visibleCells:NSMutableArray = NSMutableArray()
+    var nestedVC:UINavigationController?
     var sectionTitles:[String]?
     var titleView = UIView()
     var titleLabel = UILabel()
@@ -40,14 +40,23 @@ class ViewController: UIViewController, UITableViewDelegate,UITableViewDataSourc
             titleLabel.font = UIFont.systemFontOfSize(16.0)
             titleLabel.textAlignment = NSTextAlignment.Center
             titleLabel.layer.anchorPoint = CGPointMake(0.5, 0.5)
-            titleLabel.autoresizingMask = UIViewAutoresizing.FlexibleTopMargin | UIViewAutoresizing.FlexibleBottomMargin
+            titleLabel.autoresizingMask = [UIViewAutoresizing.FlexibleTopMargin, UIViewAutoresizing.FlexibleBottomMargin]
             titleView.addSubview(titleLabel)
         }
-        setupNavUI()
+//        setupNavUI()
+		if self.title == nil {
+//			self.title = "Explore"
+			let button = UIButton(type: .System)
+			button.setTitle("Explore"
+				, forState: .Normal)
+//			let v = UIView()
+//			v.addSubview(button)
+			self.navigationItem.titleView = button
+		}
     }
 
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        var cell = tableView.dequeueReusableCellWithIdentifier("Identifier") as! TableViewCell
+        let cell = tableView.dequeueReusableCellWithIdentifier("Identifier") as! TableViewCell
         cell.title?.text = sectionTitles![indexPath.row]
         cell.contentView.backgroundColor = UIColor.lightGrayColor()
         cell.headerView.backgroundColor = UIColor.whiteColor()
@@ -83,26 +92,29 @@ class ViewController: UIViewController, UITableViewDelegate,UITableViewDataSourc
     func toggleCell(indexPath:NSIndexPath, wantsToExpand:Bool) {
         toggleNavigationBar(!isNavigationBarCollapsed)
         if wantsToExpand {
-            if detailVC == nil {
-                detailVC = storyboard?.instantiateViewControllerWithIdentifier("DetailVC") as? DetailViewController
-                detailVC?.title = sectionTitles![selectedCellIndexPath!.row]
+            if nestedVC == nil {
+                nestedVC = storyboard?.instantiateInitialViewController() as? UINavigationController
+                nestedVC?.topViewController?.title = sectionTitles![selectedCellIndexPath!.row]
             }
-            addChildViewController(detailVC!)
-            detailVC?.didMoveToParentViewController(self)
-            var rectSelectedRow = tableview.rectForRowAtIndexPath(selectedCellIndexPath!)
-            detailVC?.view.frame = CGRectMake(CGRectGetMinX(rectSelectedRow), CGRectGetMinY(rectSelectedRow) + 64.0, CGRectGetWidth(rectSelectedRow), CGRectGetHeight(rectSelectedRow))
-            detailVC?.dismissIcon.alpha = 0.0
-            detailVC?.titleLabel.alpha = 0.0
-            detailVC?.opacityView.alpha = 1.0
-            detailVC?.view.clipsToBounds = true
-            detailVC?.buttonCLickedCompletion = {Void in
+
+			addChildViewController(nestedVC!)
+            nestedVC?.didMoveToParentViewController(self)
+            let rectSelectedRow = tableview.rectForRowAtIndexPath(selectedCellIndexPath!)
+            nestedVC?.view.frame = CGRectMake(CGRectGetMinX(rectSelectedRow), CGRectGetMinY(rectSelectedRow) + 64.0, CGRectGetWidth(rectSelectedRow), CGRectGetHeight(rectSelectedRow))
+//            detailVC?.dismissIcon.alpha = 0.0
+//            detailVC?.titleLabel.alpha = 0.0
+//            detailVC?.opacityView.alpha = 1.0
+//            detailVC?.view.clipsToBounds = true
+/*
+			detailVC?.buttonCLickedCompletion = {Void in
             self.toggleCell(self.selectedCellIndexPath!, wantsToExpand: false)
             }
-            view.addSubview(detailVC!.view)
+*/
+            view.addSubview(nestedVC!.view)
             UIView.animateWithDuration(0.4, delay: 0.2, usingSpringWithDamping: 0.9, initialSpringVelocity: 0.0, options: UIViewAnimationOptions.CurveEaseIn, animations: { () -> Void in
-                for item in self.tableview.visibleCells() {
-                    var cell = item as! UITableViewCell
-                    var cellIndexPath = self.tableview.indexPathForCell(cell)
+                for item in self.tableview.visibleCells {
+                    let cell = item 
+                    let cellIndexPath = self.tableview.indexPathForCell(cell)
                     /* move down the cells below selected one */
                     if cellIndexPath!.row > indexPath.row {
                         var frame:CGRect = cell.frame
@@ -120,34 +132,33 @@ class ViewController: UIViewController, UITableViewDelegate,UITableViewDataSourc
                     self.visibleCells.addObject(cellIndexPath!)
                 }
                 /* move up even the frame of detailVC*/
-                var frame = self.detailVC!.view.frame
+                var frame = self.nestedVC!.view.frame
                 //frame.origin.y -= self.tableview.estimatedRowHeight * CGFloat(indexPath.row)
                 frame.size.height = frame.size.height - 44.0
-                self.detailVC?.headerView.backgroundColor = UIColor.clearColor()
-                self.detailVC!.view.frame = frame
+//                self.detailVC?.headerView.backgroundColor = UIColor.clearColor()
+                self.nestedVC!.view.frame = frame
                 /* animate alpha detailVC label and button and opacity */
-                self.detailVC?.dismissIcon.alpha = 1.0
-                self.detailVC?.titleLabel.alpha = 1.0
-                self.detailVC?.fakeCellLabel.alpha = 0.0
-                self.detailVC?.opacityView.alpha = 0.0
+//                self.detailVC?.dismissIcon.alpha = 1.0
+//                self.detailVC?.titleLabel.alpha = 1.0
+//                self.detailVC?.fakeCellLabel.alpha = 0.0
+//                self.detailVC?.opacityView.alpha = 0.0
                 /* expand selected cell */
-                var cellSelected = self.tableview.cellForRowAtIndexPath(indexPath)
+                let cellSelected = self.tableview.cellForRowAtIndexPath(indexPath)
                 var frameCellExpanded = cellSelected!.frame
                 frameCellExpanded.size.height = self.tableview.frame.size.height - 44.0
                 cellSelected?.frame = frameCellExpanded
                 frameCellExpanded.origin.y += 64.0
-                self.detailVC!.view.frame = frameCellExpanded
+                self.nestedVC!.view.frame = frameCellExpanded
                 return
                 }) {
                     (isFinished) -> Void in
                     return
             }
-        }
-        else{
+        } else {
             UIView.animateWithDuration(0.4, delay: 0.1, usingSpringWithDamping: 0.8, initialSpringVelocity: 0.0, options: UIViewAnimationOptions.CurveEaseOut, animations: { () -> Void in
                 for item in self.visibleCells {
-                    var cell = self.tableview.cellForRowAtIndexPath(item as! NSIndexPath) as! TableViewCell
-                    var cellIndexPath = self.tableview.indexPathForCell(cell)
+                    let cell = self.tableview.cellForRowAtIndexPath(item as! NSIndexPath) as! TableViewCell
+                    let cellIndexPath = self.tableview.indexPathForCell(cell)
                     /* move up the cells below selected one */
                     if cellIndexPath!.row > indexPath.row {
                         var frame:CGRect = cell.frame
@@ -163,24 +174,24 @@ class ViewController: UIViewController, UITableViewDelegate,UITableViewDataSourc
                 }
                 
                 /* move up even the frame of detailVC*/
-                var frame = self.detailVC!.view.frame
+                var frame = self.nestedVC!.view.frame
                 frame.origin.y += self.tableview.estimatedRowHeight * CGFloat(indexPath.row)
-                self.detailVC!.view.frame = frame
-                self.detailVC?.headerView.backgroundColor = UIColor.whiteColor()
+                self.nestedVC!.view.frame = frame
+//                self.detailVC?.headerView.backgroundColor = UIColor.whiteColor()
                 /* animate alpha detailVC label and button and opacity */
-                self.detailVC?.dismissIcon.alpha = 0.0
-                self.detailVC?.titleLabel.alpha = 0.0
-                self.detailVC?.fakeCellLabel.alpha = 1.0
-                self.detailVC?.opacityView.alpha = 1.0
+//                self.detailVC?.dismissIcon.alpha = 0.0
+//                self.detailVC?.titleLabel.alpha = 0.0
+//                self.detailVC?.fakeCellLabel.alpha = 1.0
+//                self.detailVC?.opacityView.alpha = 1.0
                 /* collapse selected cell */
-                var cellSelected = self.tableview.cellForRowAtIndexPath(indexPath)
+                let cellSelected = self.tableview.cellForRowAtIndexPath(indexPath)
                 var frameCellExpanded = cellSelected!.frame
                 frameCellExpanded.size.height = 44.0
                 cellSelected?.frame = frameCellExpanded
                 frameCellExpanded.origin.y += 64.0
-                self.detailVC!.view.frame = frameCellExpanded
-                self.detailVC?.opacityView.layer.borderColor = UIColor.yellowColor().CGColor
-                self.detailVC?.opacityView.layer.borderWidth = 2.0
+//                self.detailVC!.view.frame = frameCellExpanded
+//                self.detailVC?.opacityView.layer.borderColor = UIColor.yellowColor().CGColor
+//                self.detailVC?.opacityView.layer.borderWidth = 2.0
 
                 return
                 }) {
@@ -188,16 +199,16 @@ class ViewController: UIViewController, UITableViewDelegate,UITableViewDataSourc
                     self.tableview.reloadData()
                     self.selectedCellIndexPath = nil
                     self.visibleCells.removeAllObjects()
-                    ((self.childViewControllers[0] as! UIViewController).view).removeFromSuperview()
+                    ((self.childViewControllers[0] ).view).removeFromSuperview()
                     self.childViewControllers[0].removeFromParentViewController()
-                    self.detailVC = nil
+                    self.nestedVC = nil
                     
                     return
             }
         }
     }
     
-    func animateNavbar(#isExpanding:Bool){
+    func animateNavbar(isExpanding isExpanding:Bool){
         UIView.animateWithDuration(2, animations: { () -> Void in
             var frame:CGRect? = self.navigationController?.navigationBar.frame
             var frameTitle = self.navigationItem.titleView?.bounds
@@ -226,7 +237,7 @@ class ViewController: UIViewController, UITableViewDelegate,UITableViewDataSourc
         var frame:CGRect? = self.navigationController?.navigationBar.frame
         var frameTitle = titleView.frame
         var scaleFactor = frame!.size.height / 44.0
-        var frameSizeHeightBeforeUpdate = frame!.size.height
+        let frameSizeHeightBeforeUpdate = frame!.size.height
         
         if hasToCollapse {
             titleLabel.transform = CGAffineTransformScale(titleLabel.transform, 1.0, 1.0)

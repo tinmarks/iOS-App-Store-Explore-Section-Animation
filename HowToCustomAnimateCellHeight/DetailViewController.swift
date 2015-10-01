@@ -24,17 +24,17 @@ class DetailViewController: UIViewController {
     var buttonCLickedCompletion:(Void)->Void
 
     
-    required init(coder aDecoder: NSCoder) {
+    required init?(coder aDecoder: NSCoder) {
         self.buttonCLickedCompletion = {Void in Void}
         super.init(coder: aDecoder)
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        println("title passed: \(title)")
+        print("title passed: \(title)")
         self.fakeCellLabel.text = title
         self.titleLabel.text = title
-        self.opacityView.setTranslatesAutoresizingMaskIntoConstraints(true)
+        self.opacityView.translatesAutoresizingMaskIntoConstraints = true
         let image = UIImage.imageWithIonIcon(.chevron_down, height: 22, color: UIColor.blueColor())
         dismissIcon.setImage(image, forState: UIControlState.Normal)
         dismissIcon.setTitle("", forState: UIControlState.Normal)
